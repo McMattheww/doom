@@ -70,6 +70,14 @@ class CustomPlayerPawn : PlayerPawn
 
         savedTicks = tics;
     }
+	
+	
+	 override int DamageMobj(Actor inflictor, Actor source, int dam, Name mod, int flags , double angle ){
+		dam += 30;
+		Super.DamageMobj(inflictor, source, dam, mod, flags, angle);
+		return dam;
+	 }
+	 
 }
 
 
