@@ -1,0 +1,14 @@
+class testobj : WeightedInventory{
+	Default {
+		Inventory.MaxAmount 99;
+		Inventory.Amount 1;
+		Inventory.PickupMessage ("got test obj");
+		WeightedInventory.weight 2.0;
+		+BRIGHT;
+	}
+	states {
+		Spawn:
+			AUPK A -1;
+			Loop;
+	}
+}

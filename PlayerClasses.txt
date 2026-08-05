@@ -1,0 +1,77 @@
+enum invSortState{
+	all,
+	weapons,
+	ammo,
+};
+class CustomPlayerPawn : PlayerPawn
+{
+	double totalWeight;
+	double maxWeight;
+	bool frozen;
+	int savedTicks;
+	int invIndex;
+	invSortState sortState;
+	int selectionIndex;
+	
+	Default
+    {
+        Player.DisplayName "Matthew";
+    }
+	
+    override void PostBeginPlay()
+    {
+        Super.PostBeginPlay();
+		frozen = false;
+		invIndex = 0;
+		sortState = all;
+		selectionIndex = 0;
+		Console.Printf("inv weight: %d", CalcWeight());
+		maxWeight = 5.0;
+		TakeInventory("HexenArmor", 1);
+		for (Inventory item = Inv; item != null; item = item.Inv) {
+			if (item.Amount != 0) {
+				Console.Printf("%s x%d", item.GetClassName(), item.Amount);
+			}
+		}
+		totalWeight = CalcWeight();
+	}
+	
+	double CalcWeight() {
+		double weight = 0;
+
+		for (Inventory item = Inv; item != null; item = item.Inv) {
+			if (item is 'WeightedWeapon') {
+				weight += (item.Amount * WeightedWeapon(item).GetWeight());
+			}
+			else if (item is 'WeightedAmmo') {
+				weight += (item.Amount * WeightedAmmo(item).GetWeight());
+			}
+			else if (item is 'WeightedInventory') {
+				weight += (item.Amount * WeightedInventory(item).GetWeight());
+			}
+		}
+		return weight;
+	}
+	
+	
+	override void Tick() {
+        if (frozen) {
+            vel = (0,0,0);      // stop movement
+            tics = savedTicks;   // prevent state countdown
+			viewbob = 0.0;
+            return;
+        }
+		else {
+			viewbob = 0.5;
+		}
+
+        Super.Tick();
+		
+
+        savedTicks = tics;
+    }
+}
+
+
+
+

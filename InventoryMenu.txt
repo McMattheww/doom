@@ -1,0 +1,74 @@
+class InventoryMenu : GenericMenu {
+	uint selection;
+	int rows;
+	int cols;
+	int size;
+	int virtualX;
+	int virtualY;
+	int borderX;
+	int borderY;
+	CustomPlayerPawn p;
+	TextureID texID;
+	TextureID texID2;
+	
+    override void Init(Menu parent) {
+        Super.Init(parent);
+		p = CustomPlayerPawn(players[consoleplayer].mo);
+		rows = 5;
+		cols = 7;
+		size = 68;
+		virtualX = 640;
+		virtualY = 480;
+		borderX = (virtualX - (size * cols))/2;
+		borderY = (virtualY - (size * rows))/2;
+		selection = p.selectionIndex;
+		texID = TexMan.CheckForTexture("SQRE", TexMan.TYPE_ANY);
+		texID2 = TexMan.CheckForTexture("AUPKA0", TexMan.TYPE_ANY);
+    }
+	
+	override void Drawer() {
+        Super.Drawer();
+		int x = borderX;
+		int y = borderY;
+		
+		for (int i = 0; i < rows; i++){
+			for (int j = 0; j < cols; j++){
+				//Screen.DrawText(SmallFont,Font.CR_RED, x, y, "test", DTA_VirtualWidth, virtualX, DTA_VirtualHeight, virtualY);
+				if (selection == (i * cols) + j){
+					Screen.DrawTexture(texID, true, x, y, DTA_VirtualWidth, virtualX, DTA_VirtualHeight, virtualY, DTA_ALPHA, 0.8);
+				}
+				else {
+					Screen.DrawTexture(texID, true, x, y, DTA_VirtualWidth, virtualX, DTA_VirtualHeight, virtualY, DTA_ALPHA, 0.4);
+				}
+				
+				Screen.DrawTexture(texID2, true, x+32, y+34, DTA_VirtualWidth, virtualX, DTA_VirtualHeight, virtualY);
+				x += size;
+			}
+			x = borderX;
+			y += size;
+		}
+	}
+	
+	override bool OnUIEvent(UIEvent e) {
+		return Super.OnUIEvent(e);
+	}
+	override bool MenuEvent(int mkey, bool fromController) {
+		if (mkey == MKEY_Left){
+			selection --;
+		}
+		if (mkey == MKEY_Right){
+			selection ++;
+		}
+		if (mkey == MKEY_Up){
+			selection -= cols;
+		}
+		if (mkey == MKEY_Down){
+			selection += cols;
+		}
+		selection = selection % (cols * rows);
+	
+		return Super.MenuEvent(mkey, fromController);
+	}
+	
+	
+}

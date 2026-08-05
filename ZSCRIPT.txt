@@ -1,0 +1,114 @@
+version "4.14.1"
+#include "ACTORS/afrit"
+#include "ZSCRIPT/InventoryMenu"
+#include "ZSCRIPT/WeightedClasses"
+#include "ZSCRIPT/PlayerClasses"
+#include "ZSCRIPT/Test"
+
+
+
+Class MonsterDeathEventHandler : EventHandler {
+
+	override void WorldThingDied(WorldEvent e){
+		console.printf("actor died");
+	}
+}
+
+
+Class InventoryThinker : Thinker {
+	int testVal;
+
+	InventoryThinker Init(){
+		self.testVal = 0;
+		ChangeStatNum(STAT_USER);
+		return self;
+	}
+	
+	static InventoryThinker GetInstance(){
+		ThinkerIterator it = ThinkerIterator.Create("InventoryThinker", STAT_USER);
+		Thinker t = it.Next();
+		if (t){
+			return InventoryThinker(t);
+		}
+		return new("InventoryThinker").Init();
+	}
+	static clearscope InventoryThinker GetInstanceREAD(){
+		ThinkerIterator it = ThinkerIterator.Create("InventoryThinker", STAT_USER);
+		Thinker t = it.Next();
+		if (t){
+			return InventoryThinker(t);
+		}
+		return null;
+	}
+}
+
+
+Class InventoryHandler : EventHandler {
+	override void NetworkProcess(ConsoleEvent e){
+		CustomPlayerPawn p = CustomPlayerPawn(players[e.player].mo);
+		if (e.name == "inventoryOpen"){
+			//p.A_DropInventory ("testobj", 1);
+			//p.frozen = !p.frozen;
+			Menu.SetMenu("InventoryMenu");
+		}
+		if (e.name == "inventoryUp"){
+			p.selectionIndex ++;
+		}
+		if (e.name == "inventoryDown"){
+			p.selectionIndex --;
+		}
+		
+	}
+}
+
+Class InventoryUIHandler : EventHandler {
+	override void RenderOverlay(RenderEvent e){
+		Super.RenderOverlay(e);
+		CustomPlayerPawn p = CustomPlayerPawn(players[consoleplayer].mo);
+		if (p.frozen){
+			StatusBar.BeginHUD();
+			int col = 0;
+			int row = 0;
+			int i = 0;
+			int y = 100;
+			if (p.sortState == all){
+				for (Inventory item = p.Inv; item != null && item.amount != 0; item = item.Inv){
+					if (i == p.invIndex){
+						Screen.DrawThickLine(80, y,90, y,20.0,Color(255, 0, 0));
+					}
+					Screen.DrawText(SmallFont,Font.CR_RED, 200, y, item.GetClassName(), DTA_VirtualWidth, 640, DTA_VirtualHeight, 480);
+					y += 20;
+					i++;	
+				}
+			}
+			//Screen.DrawText(SmallFont,Font.CR_RED,100,100,"HUD TEST");
+			//Screen.DrawThickLine(100, 100,200, 200,30.0,Color(255, 0, 0));
+		}
+	}
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

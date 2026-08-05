@@ -1,0 +1,59 @@
+class WeightedInventory : Inventory {
+
+	double weight;
+	property weight : weight;
+	
+    virtual double GetWeight() {
+        return weight;
+    }
+	
+	override bool TryPickup(in out Actor toucher) {
+	double playerWeight = CustomPlayerPawn(toucher).CalcWeight();
+		if (playerWeight + (GetWeight() * amount) < CustomPlayerPawn(toucher).maxWeight){
+			bool ret = super.TryPickup(toucher);
+			CustomPlayerPawn(toucher).totalWeight += weight;
+			return ret;
+		}
+		return false;
+	}
+}
+
+class WeightedWeapon : Weapon {
+
+    double weight;
+	property weight : weight;
+	
+    virtual double GetWeight() {
+        return weight;
+    }
+	
+	override bool TryPickup(in out Actor toucher) {
+	double playerWeight = CustomPlayerPawn(toucher).CalcWeight();
+		if (playerWeight + (GetWeight() * amount) < CustomPlayerPawn(toucher).maxWeight){
+			bool ret = super.TryPickup(toucher);
+			CustomPlayerPawn(toucher).totalWeight += weight;
+			return ret;
+		}
+		return false;
+	}
+}
+
+class WeightedAmmo : Ammo {
+
+    double weight;
+	property weight : weight;
+	
+    virtual double GetWeight() {
+        return weight;
+    }
+	
+	override bool TryPickup(in out Actor toucher) {
+	double playerWeight = CustomPlayerPawn(toucher).CalcWeight();
+		if (playerWeight + (GetWeight() * amount) < CustomPlayerPawn(toucher).maxWeight){
+			bool ret = super.TryPickup(toucher);
+			CustomPlayerPawn(toucher).totalWeight += weight;
+			return ret;
+		}
+		return false;
+	}
+}
