@@ -1,9 +1,16 @@
-class testobj : WeightedInventory{
+class testobj : Inventory{
+	HasWeight weightBehavior;
+
+	override void PostBeginPlay()
+    {
+        Super.PostBeginPlay();
+        weightBehavior = HasWeight(AddBehavior("HasWeight"));
+        weightBehavior.weight = 2.0;
+    }
 	Default {
 		Inventory.MaxAmount 99;
 		Inventory.Amount 1;
 		Inventory.PickupMessage ("got test obj");
-		WeightedInventory.weight 2.0;
 		+BRIGHT;
 	}
 	states {

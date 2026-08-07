@@ -1,15 +1,19 @@
 class InventoryMenu : GenericMenu {
-	uint selection;
+	int selection;
+	int mouseSelection;
 	int rows;
 	int cols;
 	int size;
+	int buttonSize;
 	int virtualX;
 	int virtualY;
 	int borderX;
 	int borderY;
-	CustomPlayerPawn p;
 	TextureID texID;
 	TextureID texID2;
+	CustomPlayerPawn p;
+	Inventory item;
+	String selectedItem;
 	
     override void Init(Menu parent) {
         Super.Init(parent);
@@ -17,6 +21,7 @@ class InventoryMenu : GenericMenu {
 		rows = 5;
 		cols = 7;
 		size = 68;
+		buttonSize = 64;
 		virtualX = 640;
 		virtualY = 480;
 		borderX = (virtualX - (size * cols))/2;
@@ -24,24 +29,44 @@ class InventoryMenu : GenericMenu {
 		selection = p.selectionIndex;
 		texID = TexMan.CheckForTexture("SQRE", TexMan.TYPE_ANY);
 		texID2 = TexMan.CheckForTexture("AUPKA0", TexMan.TYPE_ANY);
+		mouseSelection = -1;
     }
 	
 	override void Drawer() {
         Super.Drawer();
 		int x = borderX;
 		int y = borderY;
+		item = p.Inv;
+		String sub;
+		String amt;
 		
 		for (int i = 0; i < rows; i++){
 			for (int j = 0; j < cols; j++){
 				//Screen.DrawText(SmallFont,Font.CR_RED, x, y, "test", DTA_VirtualWidth, virtualX, DTA_VirtualHeight, virtualY);
-				if (selection == (i * cols) + j){
+				if (mouseSelection == (i * cols) + j){
+					Screen.DrawTexture(texID, true, x, y, DTA_VirtualWidth, virtualX, DTA_VirtualHeight, virtualY, DTA_ALPHA, 0.8);
+				}
+				if(selection == (i * cols) + j && mouseSelection == -1){
 					Screen.DrawTexture(texID, true, x, y, DTA_VirtualWidth, virtualX, DTA_VirtualHeight, virtualY, DTA_ALPHA, 0.8);
 				}
 				else {
 					Screen.DrawTexture(texID, true, x, y, DTA_VirtualWidth, virtualX, DTA_VirtualHeight, virtualY, DTA_ALPHA, 0.4);
 				}
 				
-				Screen.DrawTexture(texID2, true, x+32, y+34, DTA_VirtualWidth, virtualX, DTA_VirtualHeight, virtualY);
+				//Screen.DrawTexture(texID2, true, x+32, y+36, DTA_VirtualWidth, virtualX, DTA_VirtualHeight, virtualY);
+				if (item != null){
+					while (item != null && item.amount == 0){item = item.Inv;}
+					if (item != null && item.amount > 0){
+						sub = item.GetClassName();
+						sub = sub.Mid(0, 7);
+						amt = String.Format("%i", item.amount);
+						Screen.DrawText(SmallFont,Font.CR_BLUE, x+24, y+20, amt, DTA_VirtualWidth, virtualX, DTA_VirtualHeight, virtualY);
+						Screen.DrawText(SmallFont,Font.CR_BLUE, x+2, y+30, sub, DTA_VirtualWidth, virtualX, DTA_VirtualHeight, virtualY);
+						if (selection == (i * cols) + j && mouseSelection == -1){selectedItem = item.GetClassName(); console.printf("selected: %s", selectedItem);}
+						if (mouseSelection == (i * cols) + j){selectedItem = item.GetClassName(); console.printf("selected: %s", selectedItem);}
+						item = item.Inv;
+					}
+				}
 				x += size;
 			}
 			x = borderX;
@@ -54,21 +79,88 @@ class InventoryMenu : GenericMenu {
 	}
 	override bool MenuEvent(int mkey, bool fromController) {
 		if (mkey == MKEY_Left){
-			selection --;
+			if (selection % cols == 0){
+				selection += cols - 1;
+			}
+			else{
+				selection --;
+			}
+			mouseSelection = -1;
 		}
 		if (mkey == MKEY_Right){
-			selection ++;
+			if (selection % cols == (cols-1)){
+				selection -= (cols - 1);
+			}
+			else{
+				selection ++;
+			}
+			mouseSelection = -1;
 		}
 		if (mkey == MKEY_Up){
 			selection -= cols;
+			if (selection < 0){
+				selection += (cols * rows);
+			}
+			mouseSelection = -1;
 		}
 		if (mkey == MKEY_Down){
 			selection += cols;
+			selection = selection % (cols * rows);
+			mouseSelection = -1;
 		}
-		selection = selection % (cols * rows);
+		if (mkey == MKEY_Enter){
+			EventHandler.SendNetworkEvent(selectedItem);
+		}
+		if (mkey == MKEY_Back){
+			EventHandler.SendNetworkEvent("saveIndex", selection);
+		}
+		
 	
 		return Super.MenuEvent(mkey, fromController);
 	}
+	
+	override bool MouseEvent(int type, int x, int y){
+		if (type == MOUSE_Click){
+			EventHandler.SendNetworkEvent(selectedItem);
+		}
+		if (type == MOUSE_Move){
+			int screenX = Screen.GetWidth();
+			int screenY = Screen.GetHeight();
+			double virtX = virtualX;
+			double virtY = virtualY;
+			double ratioX = screenX / virtX;
+			double ratioY = screenY / virtY;
+			double scale = min(screenX / virtX, screenY / virtY);
+			double viewportWidth  = virtX  * scale;
+			double  viewportHeight = virtY * scale;
+			double offsetX = (screenX  - viewportWidth)  / 2;
+			double offsetY = (screenY - viewportHeight) / 2;
+			x = (x - offsetX) / scale;
+			y = (y - offsetY) / scale;
+			
+			//x /= ratioX;
+			//y /= ratioY;
+			Console.Printf("%i %i", x, y);
+			int x1 = borderX;
+			int y1 = borderY;
+			int x2 = borderX + buttonSize;
+			int y2 = borderY + buttonSize;
+			for (int i = 0; i < rows; i++){
+				for (int j = 0; j < cols; j++){
+					if (x >= x1 && x <= x2 && y >= y1 && y <= y2){
+						mouseSelection = (j + (i * cols));
+					}
+					x1 += size; x2 += size; 
+				}
+				x1 = borderX ; x2 = borderX + buttonSize;
+				y1 += size; y2 += size;
+			}
+			Console.Printf("mouse moved");
+		}
+	
+		return Super.MouseEvent(type, x, y);
+	}
+	
 	
 	
 }
