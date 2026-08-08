@@ -61,7 +61,7 @@ class CustomPlayerPawn : PlayerPawn
 			if (totalWeight + weightBehavior.weight > maxWeight){
 				return false;
 			}
-			return true;
+			totalWeight += weightBehavior.weight;
 		}
 		return Super.CanTouchItem(item);
 	 }

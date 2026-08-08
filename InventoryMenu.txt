@@ -39,6 +39,8 @@ class InventoryMenu : GenericMenu {
 		item = p.Inv;
 		String sub;
 		String amt;
+		String temp = String.Format("Weight %d/%d", p.totalWeight, p.maxWeight);
+		Screen.DrawText(SmallFont,Font.CR_BLUE, 10, 10, temp , DTA_VirtualWidth, virtualX, DTA_VirtualHeight, virtualY);
 		
 		for (int i = 0; i < rows; i++){
 			for (int j = 0; j < cols; j++){
@@ -114,6 +116,8 @@ class InventoryMenu : GenericMenu {
 		if (mkey == MKEY_Back){
 			EventHandler.SendNetworkEvent("saveIndex", selection);
 		}
+
+		
 		
 	
 		return Super.MenuEvent(mkey, fromController);
@@ -121,15 +125,13 @@ class InventoryMenu : GenericMenu {
 	
 	override bool MouseEvent(int type, int x, int y){
 		if (type == MOUSE_Click){
-			EventHandler.SendNetworkEvent(selectedItem);
+			return MenuEvent(MKEY_Enter, true);
 		}
 		if (type == MOUSE_Move){
 			int screenX = Screen.GetWidth();
 			int screenY = Screen.GetHeight();
 			double virtX = virtualX;
 			double virtY = virtualY;
-			double ratioX = screenX / virtX;
-			double ratioY = screenY / virtY;
 			double scale = min(screenX / virtX, screenY / virtY);
 			double viewportWidth  = virtX  * scale;
 			double  viewportHeight = virtY * scale;
@@ -137,9 +139,6 @@ class InventoryMenu : GenericMenu {
 			double offsetY = (screenY - viewportHeight) / 2;
 			x = (x - offsetX) / scale;
 			y = (y - offsetY) / scale;
-			
-			//x /= ratioX;
-			//y /= ratioY;
 			Console.Printf("%i %i", x, y);
 			int x1 = borderX;
 			int y1 = borderY;
@@ -161,6 +160,8 @@ class InventoryMenu : GenericMenu {
 		return Super.MouseEvent(type, x, y);
 	}
 	
+	
+
 	
 	
 }
