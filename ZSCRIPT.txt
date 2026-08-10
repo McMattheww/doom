@@ -1,5 +1,6 @@
 version "5.0"
 #include "ACTORS/afrit"
+#include "ZSCRIPT/Utilities"
 #include "ZSCRIPT/Behaviors"
 #include "ZSCRIPT/Thinkers"
 #include "ZSCRIPT/InventoryMenu"
@@ -8,44 +9,29 @@ version "5.0"
 
 
 
-Class MonsterDeathEventHandler : EventHandler {
+Class InventoryHandler : EventHandler {
+	override void NetworkProcess(ConsoleEvent e){
+		CustomPlayerPawn p = CustomPlayerPawn(players[e.player].mo);
+		if (e.name == "inventoryOpen"){ Menu.SetMenu("InventoryMenu"); }
+		else if (e.name == "saveIndex"){ p.selectionIndex = e.Args[0]; }
+		//if no specific event name identified, event name is used as String argument to drop specific item
+		else { p.A_DropInventory(e.name, 1); }
+	}
+}
 
+/*
+Class MonsterDeathEventHandler : EventHandler {
 	override void WorldThingDied(WorldEvent e){
 		console.printf("actor died");
 	}
 }
-
-Class InventoryHandler : EventHandler {
-	override void NetworkProcess(ConsoleEvent e){
-		CustomPlayerPawn p = CustomPlayerPawn(players[e.player].mo);
-		if (e.name == "inventoryOpen"){
-			//p.A_DropInventory ("testobj", 1);
-			//p.frozen = !p.frozen;
-			Menu.SetMenu("InventoryMenu");
-		}
-		if (e.name == "inventoryUp"){
-			p.selectionIndex ++;
-
-		}
-		if (e.name == "inventoryDown"){
-			p.selectionIndex --;
-		}
-		if (e.name == "saveIndex"){
-			p.selectionIndex = e.Args[0];
-		}
-		else { //if no specific event name identified, event name is used as String argument to drop specific item
-			p.A_DropInventory(e.name, 1);
-		}
-	}
-}
-
 Class InventoryUIHandler : EventHandler {
 	override void RenderOverlay(RenderEvent e){
 		Super.RenderOverlay(e);
 		CustomPlayerPawn p = CustomPlayerPawn(players[consoleplayer].mo);
 	}
 }
-
+*/
 
 
 

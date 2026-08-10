@@ -5,66 +5,46 @@ enum invSortState{
 };
 class CustomPlayerPawn : PlayerPawn
 {
-	double totalWeight;
-	double maxWeight;
-	int invIndex;
-	invSortState sortState;
-	int selectionIndex;
+	double totalWeight, maxWeight;
+	invSortState sortState; //which type of items should be displayed
+	int selectionIndex; //last selected inventroy item
+	Default { Player.DisplayName "Inventory test"; }
 	
-	Default
-    {
-        Player.DisplayName "Matthew";
-    }
-	
-    override void PostBeginPlay()
-    {
+    override void PostBeginPlay(){
         Super.PostBeginPlay();
-		invIndex = 0;
 		sortState = all;
 		selectionIndex = 0;
-		Console.Printf("inv weight: %d", CalcWeight());
 		maxWeight = 5.0;
-		Inventory item = FindInventory("HexenArmor");
-		if (item != null){RemoveInventory(item);}
-		for (Inventory item = Inv; item != null; item = item.Inv) {
-			if (item.Amount != 0) {
-				Console.Printf("%s x%d", item.GetClassName(), item.Amount);
-			}
-		}
+		Inventory item = FindInventory("HexenArmor"); if (item != null){RemoveInventory(item);}
 		totalWeight = CalcWeight();
 	}
 	
 	double CalcWeight() {
 		double weight = 0;
-
 		for (Inventory item = Inv; item != null; item = item.Inv) {
 			HasWeight weightBehavior = HasWeight(item.FindBehavior("HasWeight"));
-			if (weightBehavior) {
-				weight += (item.Amount * weightBehavior.weight);
-			}
+			if (weightBehavior) { weight += (item.Amount * weightBehavior.weight); }
 		}
 		return weight;
 	}
 	
-	
+	 override bool CanTouchItem(Inventory item){
+		totalWeight = CalcWeight();
+		HasWeight weightBehavior = HasWeight(item.FindBehavior("HasWeight"));
+		if (weightBehavior != null){
+			if (totalWeight + weightBehavior.weight > maxWeight){ return false; }
+			else{ totalWeight += weightBehavior.weight; }
+		}
+		return Super.CanTouchItem(item);
+	 }
+	 
+	 /*
 	 override int DamageMobj(Actor inflictor, Actor source, int dam, Name mod, int flags , double angle ){
 		dam += 30;
 		Super.DamageMobj(inflictor, source, dam, mod, flags, angle);
 		return dam;
 	 }
-	 
-	 
-	 override bool CanTouchItem(Inventory item){
-		totalWeight = CalcWeight();
-		HasWeight weightBehavior = HasWeight(item.FindBehavior("HasWeight"));
-		if (weightBehavior != null){
-			if (totalWeight + weightBehavior.weight > maxWeight){
-				return false;
-			}
-			totalWeight += weightBehavior.weight;
-		}
-		return Super.CanTouchItem(item);
-	 }
+	 */
 	 
 }
 

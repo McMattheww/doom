@@ -1,0 +1,11 @@
+class Utils
+{
+	static vector2 RealToVirtual(int x, int y, double virtX, double virtY){
+		double scale = min(Screen.GetWidth() / virtX, Screen.GetHeight() / virtY);
+		double offsetX = (Screen.GetWidth()  - virtX * scale) / 2;
+		double offsetY = (Screen.GetHeight() - virtY * scale) / 2;
+		x = (x - offsetX) / scale;
+		y = (y - offsetY) / scale;
+		return (x, y);
+	}
+}
