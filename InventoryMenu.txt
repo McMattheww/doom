@@ -32,9 +32,10 @@ class InventoryMenu : GenericMenu {
         //Super.Drawer();
 		int x = borderX; int y = borderY;
 		item = p.Inv; //set inv item to first item in player inventory
+		bool itemFound = false;
 		String sub;
 		String amt;
-		int virtualXI = virtualX;
+		int virtualXI = virtualX; //convert to integer in order to be an argument for Screen.DrawTexture
 		int virtualYI = virtualY;
 		String temp = String.Format("Weight %d/%d", p.totalWeight, p.maxWeight);
 		Screen.DrawText(SmallFont,Font.CR_BLUE, 10, 10, temp , DTA_VirtualWidth, virtualXI, DTA_VirtualHeight, virtualYI);
@@ -57,7 +58,12 @@ class InventoryMenu : GenericMenu {
 						amt = String.Format("%i", item.amount);
 						Screen.DrawText(SmallFont,Font.CR_BLUE, x+24, y+20, amt, DTA_VirtualWidth, virtualXI, DTA_VirtualHeight, virtualYI);
 						Screen.DrawText(SmallFont,Font.CR_BLUE, x+2, y+30, sub, DTA_VirtualWidth, virtualXI, DTA_VirtualHeight, virtualYI);
-						if (selection == (i * cols) + j){selectedItem = item.GetClassName(); console.printf("selected: %s", selectedItem);}
+						if (selection == (i * cols) + j){
+							selectedItem = item.GetClassName();	
+							itemFound = true;
+						}
+						console.printf("selected: %s", selectedItem);
+						
 						item = item.Inv;
 					}
 				}
@@ -66,6 +72,7 @@ class InventoryMenu : GenericMenu {
 			x = borderX;
 			y += size;
 		}
+		if (!itemFound){selectedItem = "none";}
 	}
 	
 	
@@ -86,7 +93,6 @@ class InventoryMenu : GenericMenu {
 			else{
 				selection --;
 			}
-			//mouseSelection = -1;
 		}
 		if (mkey == MKEY_Right){
 			if (selection % cols == (cols-1)){
@@ -95,19 +101,16 @@ class InventoryMenu : GenericMenu {
 			else{
 				selection ++;
 			}
-			//mouseSelection = -1;
 		}
 		if (mkey == MKEY_Up){
 			selection -= cols;
 			if (selection < 0){
 				selection += (cols * rows);
 			}
-			//mouseSelection = -1;
 		}
 		if (mkey == MKEY_Down){
 			selection += cols;
 			selection = selection % (cols * rows);
-			//mouseSelection = -1;
 		}
 		if (mkey == MKEY_Enter){
 			EventHandler.SendNetworkEvent(selectedItem);
@@ -120,7 +123,16 @@ class InventoryMenu : GenericMenu {
 	
 	override bool MouseEvent(int type, int x, int y){
 		if (type == MOUSE_Click){
-			return MenuEvent(MKEY_Enter, true);
+			vector2 coords = utils.RealToVirtual(x, y, virtualX, virtualY);
+			int x1 = borderX; int y1 = borderY;
+			int x2 = borderX + buttonSize; int y2 = borderY + buttonSize;
+			x1 += ((selection % cols) * size); x2 += ((selection % cols) * size);
+			y1 += ((selection / cols) * size); y2 += ((selection / cols) * size);
+			Console.Printf("%2f %2f", coords.x, coords.y);
+			Console.Printf("%i %i %i %i", x1, x2, y1, y2);
+			if (coords.x >= x1 && coords.x <= x2 && coords.y >= y1 && coords.y <= y2) {
+				return MenuEvent(MKEY_Enter, true);
+			}
 		}
 		if (type == MOUSE_Move){
 			vector2 coords = utils.RealToVirtual(x, y, virtualX, virtualY);
