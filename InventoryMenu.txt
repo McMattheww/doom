@@ -1,6 +1,5 @@
 class InventoryMenu : GenericMenu {
 	int selection;
-	int mouseSelection;
 	int rows;
 	int cols;
 	int size; //distance between each button
@@ -11,7 +10,7 @@ class InventoryMenu : GenericMenu {
 	int borderY;
 	TextureID texID;	//texture for buttons, resolution should be same as buttonSize so the drawn button matches the mouse collision
 	CustomPlayerPawn p; //the player, use network events to modify
-	Inventory item;	//selected item
+	Inventory item;	//selected item instance
 	String selectedItem; //classname of seleted inventory item
 	
     override void Init(Menu parent) {
@@ -24,16 +23,15 @@ class InventoryMenu : GenericMenu {
 		virtualX = 640.0; 
 		virtualY = 480.0;
 		borderX = (virtualX - (size * cols))/2;	
-		borderY = (virtualY - (size * rows))/2;
-		selection = p.selectionIndex;	//set initial item selection to user's last picked
+		borderY = (virtualY - (size * rows));
+		selection = p.selectionIndex;	//set initial selection index to user's last picked
 		texID = TexMan.CheckForTexture("SQRE", TexMan.TYPE_ANY);
-		mouseSelection = -1;	//button selected by mouse, -1 = none
     }
 	
 	override void Drawer() {
         //Super.Drawer();
-		int x = borderX; int y = borderY*2;
-		item = p.Inv;
+		int x = borderX; int y = borderY;
+		item = p.Inv; //set inv item to first item in player inventory
 		String sub;
 		String amt;
 		int virtualXI = virtualX;
@@ -44,17 +42,13 @@ class InventoryMenu : GenericMenu {
 		for (int i = 0; i < rows; i++){
 			for (int j = 0; j < cols; j++){
 				//Screen.DrawText(SmallFont,Font.CR_RED, x, y, "test", DTA_VirtualWidth, virtualX, DTA_VirtualHeight, virtualY);
-				if (mouseSelection == (i * cols) + j){
-					Screen.DrawTexture(texID, true, x, y, DTA_VirtualWidth, virtualXI, DTA_VirtualHeight, virtualYI, DTA_ALPHA, 0.8);
-				}
-				if(selection == (i * cols) + j && mouseSelection == -1){
+				//Screen.DrawTexture(texID2, true, x+32, y+36, DTA_VirtualWidth, virtualX, DTA_VirtualHeight, virtualY);
+				if (selection == (i * cols) + j){
 					Screen.DrawTexture(texID, true, x, y, DTA_VirtualWidth, virtualXI, DTA_VirtualHeight, virtualYI, DTA_ALPHA, 0.8);
 				}
 				else {
 					Screen.DrawTexture(texID, true, x, y, DTA_VirtualWidth, virtualXI, DTA_VirtualHeight, virtualYI, DTA_ALPHA, 0.4);
 				}
-				
-				//Screen.DrawTexture(texID2, true, x+32, y+36, DTA_VirtualWidth, virtualX, DTA_VirtualHeight, virtualY);
 				if (item != null){
 					while (item != null && item.amount == 0){item = item.Inv;}
 					if (item != null && item.amount > 0){
@@ -63,8 +57,7 @@ class InventoryMenu : GenericMenu {
 						amt = String.Format("%i", item.amount);
 						Screen.DrawText(SmallFont,Font.CR_BLUE, x+24, y+20, amt, DTA_VirtualWidth, virtualXI, DTA_VirtualHeight, virtualYI);
 						Screen.DrawText(SmallFont,Font.CR_BLUE, x+2, y+30, sub, DTA_VirtualWidth, virtualXI, DTA_VirtualHeight, virtualYI);
-						if (selection == (i * cols) + j && mouseSelection == -1){selectedItem = item.GetClassName(); console.printf("selected: %s", selectedItem);}
-						if (mouseSelection == (i * cols) + j){selectedItem = item.GetClassName(); console.printf("selected: %s", selectedItem);}
+						if (selection == (i * cols) + j){selectedItem = item.GetClassName(); console.printf("selected: %s", selectedItem);}
 						item = item.Inv;
 					}
 				}
@@ -93,7 +86,7 @@ class InventoryMenu : GenericMenu {
 			else{
 				selection --;
 			}
-			mouseSelection = -1;
+			//mouseSelection = -1;
 		}
 		if (mkey == MKEY_Right){
 			if (selection % cols == (cols-1)){
@@ -102,19 +95,19 @@ class InventoryMenu : GenericMenu {
 			else{
 				selection ++;
 			}
-			mouseSelection = -1;
+			//mouseSelection = -1;
 		}
 		if (mkey == MKEY_Up){
 			selection -= cols;
 			if (selection < 0){
 				selection += (cols * rows);
 			}
-			mouseSelection = -1;
+			//mouseSelection = -1;
 		}
 		if (mkey == MKEY_Down){
 			selection += cols;
 			selection = selection % (cols * rows);
-			mouseSelection = -1;
+			//mouseSelection = -1;
 		}
 		if (mkey == MKEY_Enter){
 			EventHandler.SendNetworkEvent(selectedItem);
@@ -131,11 +124,11 @@ class InventoryMenu : GenericMenu {
 		}
 		if (type == MOUSE_Move){
 			vector2 coords = utils.RealToVirtual(x, y, virtualX, virtualY);
-			int x1 = borderX; int y1 = borderY*2;
-			int x2 = borderX + buttonSize; int y2 = borderY*2 + buttonSize;
+			int x1 = borderX; int y1 = borderY;
+			int x2 = borderX + buttonSize; int y2 = borderY + buttonSize;
 			for (int i = 0; i < rows; i++){
 				for (int j = 0; j < cols; j++){
-					if (coords.x >= x1 && coords.x <= x2 && coords.y >= y1 && coords.y <= y2){ mouseSelection = (j + (i * cols)); }
+					if (coords.x >= x1 && coords.x <= x2 && coords.y >= y1 && coords.y <= y2){ selection = (j + (i * cols)); }
 					x1 += size; x2 += size; 
 				}
 				x1 = borderX ; x2 = borderX + buttonSize;

@@ -1,6 +1,7 @@
 version "5.0"
 #include "ACTORS/afrit"
 #include "ZSCRIPT/Utilities"
+#include "ZSCRIPT/dogs"
 #include "ZSCRIPT/Behaviors"
 #include "ZSCRIPT/Thinkers"
 #include "ZSCRIPT/InventoryMenu"
