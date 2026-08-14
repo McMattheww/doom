@@ -1,0 +1,26 @@
+Class InventoryThinker : Thinker {
+	int testVal;
+
+	InventoryThinker Init(){
+		self.testVal = 0;
+		ChangeStatNum(STAT_USER);
+		return self;
+	}
+	
+	static InventoryThinker GetInstance(){
+		ThinkerIterator it = ThinkerIterator.Create("InventoryThinker", STAT_USER);
+		Thinker t = it.Next();
+		if (t){
+			return InventoryThinker(t);
+		}
+		return new("InventoryThinker").Init();
+	}
+	static clearscope InventoryThinker GetInstanceREAD(){
+		ThinkerIterator it = ThinkerIterator.Create("InventoryThinker", STAT_USER);
+		Thinker t = it.Next();
+		if (t){
+			return InventoryThinker(t);
+		}
+		return null;
+	}
+}

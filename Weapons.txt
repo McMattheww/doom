@@ -1,0 +1,9 @@
+class CustomWeapon : Weapon{
+
+
+	action void A_Ribs(){
+		Console.Printf("My custom action was called!");
+	}
+
+
+}

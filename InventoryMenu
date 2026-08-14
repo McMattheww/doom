@@ -1,0 +1,154 @@
+class InventoryMenu : GenericMenu {
+	int selection;
+	int rows;
+	int cols;
+	int size; //distance between each button
+	int buttonSize; //size of button mouse collision
+	double virtualX; //coordinate space in which buttons are defined
+	double virtualY;
+	int borderX; //screen space for border around buttons
+	int borderY;
+	TextureID texID;	//texture for buttons, resolution should be same as buttonSize so the drawn button matches the mouse collision
+	CustomPlayerPawn p; //the player, use network events to modify
+	Inventory item;	//selected item instance
+	String selectedItem; //classname of seleted inventory item
+	
+    override void Init(Menu parent) {
+        Super.Init(parent);
+		p = CustomPlayerPawn(players[consoleplayer].mo);
+		rows = 5; 
+		cols = 7;
+		size = 68; 
+		buttonSize = 64; 
+		virtualX = 640.0; 
+		virtualY = 480.0;
+		borderX = (virtualX - (size * cols))/2;	
+		borderY = (virtualY - (size * rows));
+		selection = p.selectionIndex;	//set initial selection index to user's last picked
+		texID = TexMan.CheckForTexture("SQRE", TexMan.TYPE_ANY);
+    }
+	
+	override void Drawer() {
+        //Super.Drawer();
+		int x = borderX; int y = borderY;
+		item = p.Inv; //set inv item to first item in player inventory
+		bool itemFound = false;
+		String sub;
+		String amt;
+		int virtualXI = virtualX; //convert to integer in order to be an argument for Screen.DrawTexture
+		int virtualYI = virtualY;
+		String temp = String.Format("Weight %d/%d", p.totalWeight, p.maxWeight);
+		Screen.DrawText(SmallFont,Font.CR_BLUE, 10, 10, temp , DTA_VirtualWidth, virtualXI, DTA_VirtualHeight, virtualYI);
+		
+		for (int i = 0; i < rows; i++){
+			for (int j = 0; j < cols; j++){
+				//Screen.DrawText(SmallFont,Font.CR_RED, x, y, "test", DTA_VirtualWidth, virtualX, DTA_VirtualHeight, virtualY);
+				//Screen.DrawTexture(texID2, true, x+32, y+36, DTA_VirtualWidth, virtualX, DTA_VirtualHeight, virtualY);
+				if (selection == (i * cols) + j){
+					Screen.DrawTexture(texID, true, x, y, DTA_VirtualWidth, virtualXI, DTA_VirtualHeight, virtualYI, DTA_ALPHA, 0.8);
+				}
+				else {
+					Screen.DrawTexture(texID, true, x, y, DTA_VirtualWidth, virtualXI, DTA_VirtualHeight, virtualYI, DTA_ALPHA, 0.4);
+				}
+				if (item != null){
+					while (item != null && item.amount == 0){item = item.Inv;}
+					if (item != null && item.amount > 0){
+						sub = item.GetClassName();
+						sub = sub.Mid(0, 7);
+						amt = String.Format("%i", item.amount);
+						Screen.DrawText(SmallFont,Font.CR_BLUE, x+24, y+20, amt, DTA_VirtualWidth, virtualXI, DTA_VirtualHeight, virtualYI);
+						Screen.DrawText(SmallFont,Font.CR_BLUE, x+2, y+30, sub, DTA_VirtualWidth, virtualXI, DTA_VirtualHeight, virtualYI);
+						if (selection == (i * cols) + j){
+							selectedItem = item.GetClassName();	
+							itemFound = true;
+						}
+						console.printf("selected: %s", selectedItem);
+						
+						item = item.Inv;
+					}
+				}
+				x += size;
+			}
+			x = borderX;
+			y += size;
+		}
+		if (!itemFound){selectedItem = "none";}
+	}
+	
+	
+	override bool OnUIEvent(UIEvent e) {
+		if (e.Type == UIEvent.Type_KeyDown && e.KeyChar > 0){
+			Console.Printf("ribs");
+		}
+		if (e.Type == UIEvent.Type_LButtonDown){
+			Console.Printf("ribs242");
+		}
+		return Super.OnUIEvent(e);
+	}
+	override bool MenuEvent(int mkey, bool fromController) {
+		if (mkey == MKEY_Left){
+			if (selection % cols == 0){
+				selection += cols - 1;
+			}
+			else{
+				selection --;
+			}
+		}
+		if (mkey == MKEY_Right){
+			if (selection % cols == (cols-1)){
+				selection -= (cols - 1);
+			}
+			else{
+				selection ++;
+			}
+		}
+		if (mkey == MKEY_Up){
+			selection -= cols;
+			if (selection < 0){
+				selection += (cols * rows);
+			}
+		}
+		if (mkey == MKEY_Down){
+			selection += cols;
+			selection = selection % (cols * rows);
+		}
+		if (mkey == MKEY_Enter){
+			EventHandler.SendNetworkEvent(selectedItem);
+		}
+		if (mkey == MKEY_Back){
+			EventHandler.SendNetworkEvent("saveIndex", selection);
+		}
+		return Super.MenuEvent(mkey, fromController);
+	}
+	
+	override bool MouseEvent(int type, int x, int y){
+		if (type == MOUSE_Click){
+			vector2 coords = utils.RealToVirtual(x, y, virtualX, virtualY);
+			int x1 = borderX; int y1 = borderY;
+			int x2 = borderX + buttonSize; int y2 = borderY + buttonSize;
+			x1 += ((selection % cols) * size); x2 += ((selection % cols) * size);
+			y1 += ((selection / cols) * size); y2 += ((selection / cols) * size);
+			Console.Printf("%2f %2f", coords.x, coords.y);
+			Console.Printf("%i %i %i %i", x1, x2, y1, y2);
+			if (coords.x >= x1 && coords.x <= x2 && coords.y >= y1 && coords.y <= y2) {
+				return MenuEvent(MKEY_Enter, true);
+			}
+		}
+		if (type == MOUSE_Move){
+			vector2 coords = utils.RealToVirtual(x, y, virtualX, virtualY);
+			int x1 = borderX; int y1 = borderY;
+			int x2 = borderX + buttonSize; int y2 = borderY + buttonSize;
+			for (int i = 0; i < rows; i++){
+				for (int j = 0; j < cols; j++){
+					if (coords.x >= x1 && coords.x <= x2 && coords.y >= y1 && coords.y <= y2){ selection = (j + (i * cols)); }
+					x1 += size; x2 += size; 
+				}
+				x1 = borderX ; x2 = borderX + buttonSize;
+				y1 += size; y2 += size;
+			}
+		}
+		return Super.MouseEvent(type, x, y);
+	}
+	
+	
+}

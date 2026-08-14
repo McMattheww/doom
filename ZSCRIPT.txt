@@ -3,6 +3,7 @@ version "5.0"
 #include "ZSCRIPT/Utilities"
 #include "ZSCRIPT/dogs"
 #include "ZSCRIPT/Behaviors"
+#include "ZSCRIPT/Weapons"
 #include "ZSCRIPT/Thinkers"
 #include "ZSCRIPT/InventoryMenu"
 #include "ZSCRIPT/PlayerClasses"
@@ -19,6 +20,51 @@ Class InventoryHandler : EventHandler {
 		else { p.A_DropInventory(e.name, 1); }
 	}
 }
+
+
+Class ZombieTest : ZombieMan{
+	Hitbox head;
+	Headshottable headshot;
+	vector3 headOffset;
+	 Default {
+		Health 100;
+		Height 38;
+	}
+	
+	/*
+	States{
+		Pain:
+			ZOMB B 3
+			{
+				headOffset = (-3, 0, 28);
+			}
+
+			ZOMB C 3
+			{
+				headOffset = (-5, 0, 27);
+			}
+
+			ZOMB D 3
+			{
+				headOffset = (-2, 0, 29);
+			}	
+
+			Goto See;
+		}
+	*/
+	
+	override void PostBeginPlay(){
+		Super.PostBeginPlay();
+		headshot = Headshottable(AddBehavior("Headshottable"));
+		headOffset = (0, 0, height);
+		head = Hitbox(Spawn("ZombieHead",Pos + headOffset, ALLOW_REPLACE));
+		if (head) { head.owner = self;}
+	}
+}
+
+	
+
+
 
 /*
 Class MonsterDeathEventHandler : EventHandler {
