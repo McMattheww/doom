@@ -5,58 +5,13 @@ class HasWeight : Behavior{
 }
 
 
-class Hitbox : Actor {
-	Actor owner;
-	vector3 offset; //where the head is located relative to owner origin
-	Default {
-		Health 100000;
-		Radius 9;
-		Height 11;
-		//+NOBLOCKMAP
-        +NOGRAVITY
-        +THRUSPECIES
-        +NOTARGET
-        //+NOSECTOR
-		+SOLID
-		+SHOOTABLE
-		+NORADIUSDMG
-	}
-	
-	States{
-    Spawn:
-        HEAD A 1;
-        Loop;
-	
-    }
-	
-	override void Tick() {
-        Super.Tick();
-        if (Owner == null || owner.bDestroyed || owner.health < 1) { Destroy(); return; }
-		ZombieTest zombie = ZombieTest(owner);
-		Vector2 xyOffset = RotateVector((zombie.headOffset.x, zombie.headOffset.y), owner.Angle);
-		Vector3 offset = (xyOffset.X, xyOffset.Y, zombie.headOffset.z);
-        SetOrigin(owner.Pos + offset, false);
-    }
-	override int DamageMobj(Actor inflictor, Actor source, int dam, Name mod, int flags , double angle ){
-		console.printf("headshot");
-		if (owner != null) {
-			return owner.DamageMobj(inflictor,source,dam * 2,mod,flags,angle);
-		}
-		//if a rail attack hits head and body it will deal x3 damage
-		
-		
-		
-		return Super.DamageMobj(inflictor, source, dam, mod, flags, angle);
-		//return dam;
-	 }
-}
-
 
 class Headshottable : Behavior{
 
-	double multiplier;
-	Hitbox hbox;
-	
-	
+	double multiplier; //damage mult
+	vector2 origin; //where compared to the parent actor the hitbox spawns
+	int height;  //dimensions of hitbox
+	int radius;
 	
 }
+

@@ -1,5 +1,7 @@
 version "5.0"
 #include "ACTORS/afrit"
+#include "ACTORS/AMMO/10mm.txt"
+#include "ACTORS/WEAPONS/10mm/revolver.txt"
 #include "ZSCRIPT/Utilities"
 #include "ZSCRIPT/dogs"
 #include "ZSCRIPT/Behaviors"
@@ -22,47 +24,49 @@ Class InventoryHandler : EventHandler {
 }
 
 
-Class ZombieTest : ZombieMan{
-	Hitbox head;
-	Headshottable headshot;
-	vector3 headOffset;
-	 Default {
-		Health 100;
-		Height 38;
-	}
-	
-	/*
-	States{
-		Pain:
-			ZOMB B 3
-			{
-				headOffset = (-3, 0, 28);
-			}
-
-			ZOMB C 3
-			{
-				headOffset = (-5, 0, 27);
-			}
-
-			ZOMB D 3
-			{
-				headOffset = (-2, 0, 29);
-			}	
-
-			Goto See;
-		}
-	*/
-	
-	override void PostBeginPlay(){
-		Super.PostBeginPlay();
-		headshot = Headshottable(AddBehavior("Headshottable"));
-		headOffset = (0, 0, height);
-		head = Hitbox(Spawn("ZombieHead",Pos + headOffset, ALLOW_REPLACE));
-		if (head) { head.owner = self;}
+class MyBulletPuff : BulletPuff
+{
+	Default
+	{
+		Decal "MyBulletDecal";
+		Scale 1.0;
 	}
 }
 
+
+class ZombieClone : ZombieMan {
+	Headshottable hbox;
+	override void PostBeginPlay(){
+		super.PostBeginPlay();
+		hbox = Headshottable(AddBehavior("Headshottable"));
+		hbox.origin = (0, 39);
+		hbox.height = 20;
+		hbox.radius = 7;
+		hbox.multiplier = 2.0;
+	}
+	Default
+    {
+        Health 1000;
+    }
+	override int DamageMobj(Actor inflictor,Actor source,int dam,Name mod,int flags,double angle){
+		Headshottable head = Headshottable(FindBehavior("Headshottable"));
+				if (head != null && mod != "radius"){
+					double lowerY = pos.z + head.origin.y;
+					double upperY = lowerY + head.height;
+					if (inflictor.pos.z > lowerY && inflictor.pos.z < upperY){
+						Console.Printf("Headshot!");
+						dam *= head.multiplier;
+					}
+				}
+		
+		Super.DamageMobj(inflictor, source, dam, mod, flags, angle);
+		console.printf("damage");
+		return dam;
 	
+	}
+}
+
+
 
 
 

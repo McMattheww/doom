@@ -10,7 +10,7 @@ class CustomPlayerPawn : DoomPlayer
 	int selectionIndex; //last selected inventroy item
 	Default {
 		Player.DisplayName "Inventory test"; 
-		Player.AttackZOffset 13; 
+		//Player.AttackZOffset 13; 
 		//Player.ViewHeight 64; 
 	}
 	
