@@ -1,7 +1,6 @@
 
 class BreakableWeapon : DoomWeapon{
-	Array<double> durabilityList;
-	double durability;
+	Array<double> durability;
 	int active;
 	HasWeight weightBehavior;
 	
@@ -9,23 +8,22 @@ class BreakableWeapon : DoomWeapon{
 		inventory.MaxAmount 20;
 	}
 	
-	
 	override void PostBeginPlay(){
 		super.PostBeginPlay();
-		durability = 100.0;
+		if (durability.size() == 0){durability.push(100.0);}
 		active = 0;
 		weightBehavior = HasWeight(AddBehavior("HasWeight"));
 	}
 	
 	override void AttachToOwner(Actor other){
-		durabilityList.Push(durability);
 		Super.AttachToOwner(other);
 	}
 	
 	override bool HandlePickup (Inventory item) {
 		bool res = Super.HandlePickup(item);
 		if (res){
-			durabilityList.Push(durability);
+			BreakableWeapon wep = BreakableWeapon(item);
+			durability.Push(wep.durability[0]);
 		}
 		return res;
 	}
@@ -37,18 +35,16 @@ class BreakableWeapon : DoomWeapon{
 		}
 	}
 
-	//call after weapon fires to reduce durability and go to break state if durability is less  than 0
+	//call after weapon fires to reduce durability and go to break state if durability is less than 0
 	action state A_CheckBreak(StateLabel label){
 		BreakableWeapon ready = BreakableWeapon(player.ReadyWeapon);
-		ready.durabilityList[ready.active] -= 20.0;
-		ready.durability = ready.durabilityList[ready.active];
-		Console.Printf("%f", ready.durabilityList[ready.active]);
-		for (int i = 0; i < ready.durabilityList.Size(); i++){
-			Console.Printf("durability[%d] = %f, size = %d",i,ready.durabilityList[i],ready.durabilityList.Size());
+		ready.durability[ready.active] -= 20.0;
+		Console.Printf("%f", ready.durability[ready.active]);
+		for (int i = 0; i < ready.durability.Size(); i++){
+			Console.Printf("durability[%d] = %f, size = %d",i,ready.durability[i],ready.durability.Size());
 			}
-		
-		if (ready.durabilityList[ready.active] <= 0.0){
-			ready.durabilityList.Delete(ready.active);
+		if (ready.durability[ready.active] <= 0.0){
+			ready.durability.Delete(ready.active);
 			ready.active = 0;
 			ready.Amount--;
 			return ResolveState(label);
@@ -83,12 +79,14 @@ class BreakableWeapon : DoomWeapon{
 			bSpecial = bSolid = false;
 			return self;
 		}
-		let copy = Inventory(Spawn (GetClass(), Owner.Pos, NO_REPLACE));
+		//when dropping breakable weapon with another remainnig in inventory, remove from durability list
+		let copy = BreakableWeapon(Spawn (GetClass(), Owner.Pos, NO_REPLACE));
 		if (copy != NULL){
 			inventory wep = Owner.FindInventory(GetClassName());
 			BreakableWeapon bwep = BreakableWeapon(wep);
 			if (bwep!= NULL){
-				bwep.durabilityList.Delete(bwep.active);
+				copy.durability.push(bwep.durability[bwep.active]);
+				bwep.durability.Delete(bwep.active);
 				bwep.active = 0;
 			}
 			copy.MaxAmount = MaxAmount;
@@ -97,16 +95,8 @@ class BreakableWeapon : DoomWeapon{
 			copy.bSpecial = copy.bSolid = false;
 			Amount -= amt;
 		}
-		return copy;
+		return inventory(copy);
 	}
-	
-	/*
-	override void OnDrop (Actor dropper) {
-		PlayerPawn p = PlayerPawn(dropper);
-		self.durability = BreakableWeapon(p.FindInventory(self.GetClassName())).durability;
-	
-	}
-	*/
 	
 
 }

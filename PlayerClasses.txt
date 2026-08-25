@@ -18,7 +18,7 @@ class CustomPlayerPawn : DoomPlayer
         Super.PostBeginPlay();
 		sortState = all;
 		selectionIndex = 0;
-		maxWeight = 10.0;
+		maxWeight = 8.0;
 		Inventory item = FindInventory("HexenArmor"); if (item != null){RemoveInventory(item);}
 		totalWeight = CalcWeight();
 	}
