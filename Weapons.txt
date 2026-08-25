@@ -26,9 +26,6 @@ class BreakableWeapon : DoomWeapon{
 		bool res = Super.HandlePickup(item);
 		if (res){
 			durabilityList.Push(durability);
-			for (int i = 0; i < durabilityList.Size(); i++){
-			Console.Printf("durability[%d] = %f, size = %d",i,durabilityList[i],durabilityList.Size());
-			}
 		}
 		return res;
 	}
@@ -40,14 +37,15 @@ class BreakableWeapon : DoomWeapon{
 		}
 	}
 
-	
-	
-		
+	//call after weapon fires to reduce durability and go to break state if durability is less  than 0
 	action state A_CheckBreak(StateLabel label){
 		BreakableWeapon ready = BreakableWeapon(player.ReadyWeapon);
 		ready.durabilityList[ready.active] -= 20.0;
 		ready.durability = ready.durabilityList[ready.active];
 		Console.Printf("%f", ready.durabilityList[ready.active]);
+		for (int i = 0; i < ready.durabilityList.Size(); i++){
+			Console.Printf("durability[%d] = %f, size = %d",i,ready.durabilityList[i],ready.durabilityList.Size());
+			}
 		
 		if (ready.durabilityList[ready.active] <= 0.0){
 			ready.durabilityList.Delete(ready.active);
@@ -58,7 +56,7 @@ class BreakableWeapon : DoomWeapon{
 		return null;
 	}
 	
-	
+	//call during break state to switch selected weapon
 	action void A_NewWeapon(){
 		if (player.ReadyWeapon.amount > 0){
 			player.PendingWeapon = player.mo.PickNewWeapon(null);
@@ -87,10 +85,11 @@ class BreakableWeapon : DoomWeapon{
 		}
 		let copy = Inventory(Spawn (GetClass(), Owner.Pos, NO_REPLACE));
 		if (copy != NULL){
-			BreakableWeapon wep = BreakableWeapon(copy);
-			if (wep!= NULL){
-				wep.durabilityList.Delete(wep.active);
-				wep.active = 0;
+			inventory wep = Owner.FindInventory(GetClassName());
+			BreakableWeapon bwep = BreakableWeapon(wep);
+			if (bwep!= NULL){
+				bwep.durabilityList.Delete(bwep.active);
+				bwep.active = 0;
 			}
 			copy.MaxAmount = MaxAmount;
 			copy.Amount = amt;
