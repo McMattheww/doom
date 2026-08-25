@@ -78,10 +78,10 @@ class InventoryMenu : GenericMenu {
 	
 	override bool OnUIEvent(UIEvent e) {
 		if (e.Type == UIEvent.Type_KeyDown && e.KeyChar > 0){
-			Console.Printf("ribs");
+			//Console.Printf("ribs");
 		}
 		if (e.Type == UIEvent.Type_LButtonDown){
-			Console.Printf("ribs242");
+			//Console.Printf("ribs242");
 		}
 		return Super.OnUIEvent(e);
 	}

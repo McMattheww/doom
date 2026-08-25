@@ -1,70 +1,113 @@
 
-class CustomWeapon : DoomWeapon{
-
-/*
-	action void A_Fire(){
-		Vector3 start = Pos;
-		FLineTraceData trace;
-
-		if (LineTrace(Angle,8192,Pitch,0,38,0,0,trace)){
-			if (trace.HitActor != null){
-				Actor victim = trace.HitActor;
-				Vector3 hitPos = trace.HitLocation;
-				vector3 dir = trace.HitDir;
-				CustomBulletAttack
-				Headshottable head = Headshottable(victim.FindBehavior("Headshottable"));
-				if (head != null){
-					double lowerY = victim.pos.z + head.origin.y;
-					double upperY = lowerY + head.height;
-					if (hitpos.z > lowerY && hitpos.z < upperY){
-						Console.Printf("Headshot!");
-					}
-				}
-				
-
-				Console.Printf("Hit %s at %.2f %.2f %.2f",victim.GetClassName(),hitPos.X,hitPos.Y,hitPos.Z);
-
-				// Your custom behavior here.
+class BreakableWeapon : DoomWeapon{
+	Array<double> durabilityList;
+	double durability;
+	int active;
+	HasWeight weightBehavior;
+	
+	Default{
+		inventory.MaxAmount 20;
+	}
+	
+	
+	override void PostBeginPlay(){
+		super.PostBeginPlay();
+		durability = 100.0;
+		active = 0;
+		weightBehavior = HasWeight(AddBehavior("HasWeight"));
+	}
+	
+	override void AttachToOwner(Actor other){
+		durabilityList.Push(durability);
+		Super.AttachToOwner(other);
+	}
+	
+	override bool HandlePickup (Inventory item) {
+		bool res = Super.HandlePickup(item);
+		if (res){
+			durabilityList.Push(durability);
+			for (int i = 0; i < durabilityList.Size(); i++){
+			Console.Printf("durability[%d] = %f, size = %d",i,durabilityList[i],durabilityList.Size());
 			}
-			else if (trace.HitLine != null){
-				SpawnPuff('MyBulletPuff',trace.HitLocation,Angle,Angle,0,0,null);
-			}
+		}
+		return res;
+	}
+
+	override void Tick(){
+		super.tick();
+		if (Owner && amount == 0){
+			if (Owner.player.ReadyWeapon.GetClass() != self.GetClass()){Destroy();}
 		}
 	}
-*/
-/*
-	action void A_Fire(){
-	//use A_FireBullets for 
+
 	
-		weapon ready = player.ReadyWeapon;
 	
-		Vector3 start = Pos;
-		FLineTraceData trace;
-		double horizontalDeviation = 2;
-		double verticalDeviation = 0;
 		
-		A_FireBullets(horizontalDeviation, verticalDeviation, -1, 10, "BulletPuff", (FBF_USEAMMO + FBF_NORANDOM + FBF_EXPLICITANGLE), 0, null, 34);
-		if (LineTrace(Angle+horizontalDeviation,8192,Pitch+verticalDeviation,0,34,0,0,trace)){
-			if (trace.HitActor != null){
-				Actor victim = trace.HitActor;
-				Vector3 hitPos = trace.HitLocation;
-				Headshottable head = Headshottable(victim.FindBehavior("Headshottable"));
-				if (head != null){
-					double lowerY = victim.pos.z + head.origin.y;
-					double upperY = lowerY + head.height;
-					if (hitpos.z > lowerY && hitpos.z < upperY){
-						Console.Printf("Headshot!");
-					}
-				}
-			}
+	action state A_CheckBreak(StateLabel label){
+		BreakableWeapon ready = BreakableWeapon(player.ReadyWeapon);
+		ready.durabilityList[ready.active] -= 20.0;
+		ready.durability = ready.durabilityList[ready.active];
+		Console.Printf("%f", ready.durabilityList[ready.active]);
+		
+		if (ready.durabilityList[ready.active] <= 0.0){
+			ready.durabilityList.Delete(ready.active);
+			ready.active = 0;
+			ready.Amount--;
+			return ResolveState(label);
 		}
+		return null;
+	}
 	
-		
+	
+	action void A_NewWeapon(){
+		if (player.ReadyWeapon.amount > 0){
+			player.PendingWeapon = player.mo.PickNewWeapon(null);
+		}
+		else{
+			player.PendingWeapon = weapon(player.mo.FindInventory("Fist"));
+		}	
+	}
+	
+	
+	override Inventory CreateTossable (int amt){
+		// If self actor lacks a SpawnState, don't drop it. (e.g. A base weapon
+		// like the fist can't be dropped because you'll never see it.)
+		if (SpawnState == GetDefaultByType("Actor").SpawnState || SpawnState == NULL){
+			return NULL;
+		}
+		if (bUndroppable || bUntossable || Owner == NULL || Amount <= 0 || amt == 0){
+			return NULL;
+		}
+		amt = clamp(amt, 1, Amount);
+		if (Amount == amt && !bKeepDepleted){
+			BecomePickup ();
+			DropTime = 30;
+			bSpecial = bSolid = false;
+			return self;
+		}
+		let copy = Inventory(Spawn (GetClass(), Owner.Pos, NO_REPLACE));
+		if (copy != NULL){
+			BreakableWeapon wep = BreakableWeapon(copy);
+			if (wep!= NULL){
+				wep.durabilityList.Delete(wep.active);
+				wep.active = 0;
+			}
+			copy.MaxAmount = MaxAmount;
+			copy.Amount = amt;
+			copy.DropTime = 30;
+			copy.bSpecial = copy.bSolid = false;
+			Amount -= amt;
+		}
+		return copy;
+	}
+	
+	/*
+	override void OnDrop (Actor dropper) {
+		PlayerPawn p = PlayerPawn(dropper);
+		self.durability = BreakableWeapon(p.FindInventory(self.GetClassName())).durability;
+	
 	}
 	*/
-	action void A_Fire(){
-		weapon ready = player.ReadyWeapon;
-		A_FireBullets(0, 0, -1, 10, "BulletPuff", (FBF_USEAMMO + FBF_NORANDOM + FBF_EXPLICITANGLE), 0, null, 34);
-	}
+	
 
 }

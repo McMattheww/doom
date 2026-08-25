@@ -6,6 +6,7 @@ class HasWeight : Behavior{
 
 
 
+
 class Headshottable : Behavior{
 
 	double multiplier; //damage mult
