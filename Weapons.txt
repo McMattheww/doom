@@ -1,8 +1,12 @@
 
 class BreakableWeapon : DoomWeapon{
 	Array<double> durability;
-	int active;
+	int active; 
+	int ammoTypes;
+	int activeAmmo;
+	property activeAmmo : activeAmmo;
 	HasWeight weightBehavior;
+	SubtypedAmmo subAmmo1, subAmmo2, subAmmo3, subAmmo4;
 	
 	Default{
 		inventory.MaxAmount 20;
@@ -15,9 +19,6 @@ class BreakableWeapon : DoomWeapon{
 		weightBehavior = HasWeight(AddBehavior("HasWeight"));
 	}
 	
-	override void AttachToOwner(Actor other){
-		Super.AttachToOwner(other);
-	}
 	
 	override bool HandlePickup (Inventory item) {
 		bool res = Super.HandlePickup(item);
@@ -63,6 +64,145 @@ class BreakableWeapon : DoomWeapon{
 	}
 	
 	
+	action void A_LoadClip(){
+		Class<Inventory> magazine = player.ReadyWeapon.AmmoType1;
+		Class<Inventory> source = player.ReadyWeapon.AmmoType2;
+		Inventory m = player.mo.FindInventory(magazine.GetClassName());
+		Inventory s = player.mo.FindInventory(source.GetClassName());
+		int diff = m.maxamount - m.amount;
+		player.mo.A_GiveInventory(magazine, diff);
+		player.mo.A_TakeInventory(source, diff);
+	}
+	
+	action void A_CycleAmmo(){
+		Weapon wep = player.ReadyWeapon;
+		BreakableWeapon bwep = BreakableWeapon(wep);
+		Class<Inventory> magazine = player.ReadyWeapon.AmmoType1;
+		Class<Inventory> source = player.ReadyWeapon.AmmoType2;
+		Inventory m = player.mo.FindInventory(magazine.GetClassName());
+		Inventory s = player.mo.FindInventory(source.GetClassName());
+		int remaining = m.amount; m.amount = 0;
+		s.amount += remaining;
+		bwep.activeAmmo += 1;
+		bwep.activeAmmo %= bwep.ammoTypes;
+	}
+	/*
+	override void AttachToOwner (Actor other)
+	{
+		Super.AttachToOwner (other);
+
+		Ammo1 = AddAmmo (Owner, AmmoType1, AmmoGive1);
+		Ammo2 = AddAmmo (Owner, AmmoType2, AmmoGive2);
+		let sourceDefault = GetDefaultByType(AmmoType2);
+		//let source = SubtypedAmmo(sourceDefault);
+		
+		if (source != null){
+			if (source.subAmmo1 != null)subAmmo1 = SubtypedAmmo(AddAmmo(Owner, source.subAmmo1, AmmoGive2));
+			if (source.subAmmo2 != null)subAmmo2 = SubtypedAmmo(AddAmmo(Owner, source.subAmmo2, 0));
+			if (source.subAmmo3 != null)subAmmo3 = SubtypedAmmo(AddAmmo(Owner, source.subAmmo3, 0));
+			if (source.subAmmo4 != null)subAmmo4 = SubtypedAmmo(AddAmmo(Owner, source.subAmmo4, 0));
+		}
+		
+		
+		SisterWeapon = AddWeapon (SisterWeaponType);
+		if (Owner.player != NULL)
+		{
+			if (!Owner.player.GetNeverSwitch() && !bNo_Auto_Switch)
+			{
+				Owner.player.PendingWeapon = self;
+			}
+			if (Owner.player.mo == players[consoleplayer].camera)
+			{
+				StatusBar.ReceivedWeapon (self);
+			}
+		}
+		GivenAsMorphWeapon = false; // will be set explicitly by morphing code
+	}
+	*/
+	override void AttachToOwner (Actor other)
+	{
+		Super.AttachToOwner (other);
+		if (AmmoType2 != null){
+			let source = SubtypedAmmo(GetDefaultByType(AmmoType2));
+	
+		}
+		console.printf("%s", AmmoType1.GetClassName());
+		//let sourceDefault = GetDefaultByType(AmmoType2.GetClassName());
+		//let source = SubtypedAmmo(sourceDefault);
+	}
+	
+	
+	override bool CheckAmmo(int fireMode, bool autoSwitch, bool requireAmmo, int ammocount)
+	{
+		int count1, count2;
+		int enough, enoughmask;
+		int lAmmoUse1;
+		int lAmmoUse2 = AmmoUse2;
+
+		if (sv_infiniteammo || (Owner.FindInventory ('PowerInfiniteAmmo', true) != null))
+		{
+			return true;
+		}
+		if (fireMode == EitherFire)
+		{
+			bool gotSome = CheckAmmo (PrimaryFire, false) || CheckAmmo (AltFire, false);
+			if (!gotSome && autoSwitch)
+			{
+				PlayerPawn(Owner).PickNewWeapon (null);
+			}
+			return gotSome;
+		}
+		let altFire = (fireMode == AltFire);
+		let optional = (altFire? bAlt_Ammo_Optional : bAmmo_Optional);
+		let useboth = (altFire? bAlt_Uses_Both : bPrimary_Uses_Both);
+
+		if (!requireAmmo && optional)
+		{
+			return true;
+		}
+		count1 = (Ammo1 != null) ? Ammo1.Amount : 0;
+		count2 = (Ammo2 != null) ? Ammo2.Amount : 0;
+
+		if (bDehAmmo && Ammo1 == null)
+		{
+			lAmmoUse1 = 0;
+		}
+		else if (ammocount >= 0)
+		{
+			lAmmoUse1 = ammocount;
+			lAmmoUse2 = ammocount;
+		}
+		else
+		{
+			lAmmoUse1 = AmmoUse1;
+		}
+
+		enough = (count1 >= lAmmoUse1) | ((count2 >= lAmmoUse2) << 1);
+		if (useboth)
+		{
+			enoughmask = 3;
+		}
+		else
+		{
+			enoughmask = 1 << altFire;
+		}
+		if (altFire && FindState('AltFire') == null)
+		{ // If this weapon has no alternate fire, then there is never enough ammo for it
+			enough &= 1;
+		}
+		if (((enough & enoughmask) == enoughmask) || (enough && bAmmo_CheckBoth))
+		{
+			return true;
+		}
+		// out of ammo, pick a weapon to change to
+		if (autoSwitch)
+		{
+			PlayerPawn(Owner).PickNewWeapon (null);
+		}
+		return false;
+	}
+	
+	
 	override Inventory CreateTossable (int amt){
 		// If self actor lacks a SpawnState, don't drop it. (e.g. A base weapon
 		// like the fist can't be dropped because you'll never see it.)
@@ -100,3 +240,18 @@ class BreakableWeapon : DoomWeapon{
 	
 
 }
+
+/*
+
+action int getShellsMode()
+	{
+		return invoker.ShellsMode;
+	}
+	
+	int ShellsMode;
+	int LastMode; //need this so the upgrade kicks out the right shells when switching
+	const Shell_Buck = 1;
+	const Shell_Slug = 2;
+	const Shell_Drag = 3;
+
+*/

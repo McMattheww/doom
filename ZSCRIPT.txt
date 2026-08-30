@@ -1,15 +1,17 @@
 version "5.0"
 #include "ACTORS/afrit"
-#include "ACTORS/AMMO/10mm.txt"
 #include "ACTORS/WEAPONS/10mm/revolver.txt"
 #include "ZSCRIPT/Utilities"
 #include "ZSCRIPT/dogs"
 #include "ZSCRIPT/Behaviors"
 #include "ZSCRIPT/Weapons"
+#include "ZSCRIPT/Ammunition"
 #include "ZSCRIPT/Thinkers"
 #include "ZSCRIPT/InventoryMenu"
 #include "ZSCRIPT/PlayerClasses"
 #include "ZSCRIPT/Test"
+#include "ZSCRIPT/WEAPONS/pistol.txt"
+#include "ZSCRIPT/AMMO/pistolAmmo.txt"
 
 
 

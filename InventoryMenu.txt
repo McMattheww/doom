@@ -1,14 +1,9 @@
 class InventoryMenu : GenericMenu {
-	int selection;
-	int rows;
-	int cols;
-	int size; //distance between each button
-	int buttonSize; //size of button mouse collision
-	double virtualX; //coordinate space in which buttons are defined
-	double virtualY;
-	int borderX; //screen space for border around buttons
-	int borderY;
-	TextureID texID;  //texture for buttons, resolution should be same as buttonSize so the drawn button area matches the mouse collision area
+	ButtonGrid grid; 
+	int selection; //what button in the ButtonGrid is selected
+	int virtualX; //coordinate space in which menu elements are defined
+	int virtualY;
+	TextureID texID;  //texture for buttons in the ButtonGrid, resolution should be same as Size so the drawn button area matches the mouse collision area
 	CustomPlayerPawn p; //the player, use network events to modify
 	Inventory item;	//selected item instance
 	Array<Inventory> items; //list of valid player inventory items to be drawn in inventory
@@ -17,87 +12,64 @@ class InventoryMenu : GenericMenu {
     override void Init(Menu parent) {
         Super.Init(parent);
 		p = CustomPlayerPawn(players[consoleplayer].mo);
-		rows = 5; 
-		cols = 7;
-		size = 68; 
-		buttonSize = 64; 
-		virtualX = 1280.0; 
-		virtualY = 720.0;
-		borderX = (virtualX - (size * cols))/2;	
-		borderY = (virtualY - (size * rows));
+		virtualX = 640; 
+		virtualY = 480;
 		selection = p.selectionIndex;	//set initial selection index to user's last picked
 		texID = TexMan.CheckForTexture("SQRE", TexMan.TYPE_ANY);
+		grid = new("ButtonGrid").init(6, 6, 64, 4, (virtualX/2,virtualY/2), virtualX, virtualY);
     }
 	
 	override void Drawer() {
-        Super.Drawer();
-		GenerateItemList();
-		int x = borderX; int y = borderY;
-		bool itemFound = false;
+		Super.Drawer(); GenerateItemList();
 		String sub; String amt;
-		int virtualXI = virtualX; //convert to integer in order to be an argument for Screen.DrawTexture
-		int virtualYI = virtualY;
-		String temp = String.Format("Weight %d/%d", p.totalWeight, p.maxWeight);
-		//Screen.DrawText(SmallFont,Font.CR_BLUE, 10, 10, temp , DTA_VirtualWidth, virtualXI, DTA_VirtualHeight, virtualYI);
-		Screen.DrawText(SmallFont,Font.CR_BLUE, 10, 10, temp);
 		
-		for (int i = 0; i < rows; i++){
-			for (int j = 0; j < cols; j++){
-				//Screen.DrawText(SmallFont,Font.CR_RED, x, y, "test", DTA_VirtualWidth, virtualX, DTA_VirtualHeight, virtualY);
-				//Screen.DrawTexture(texID2, true, x+32, y+36, DTA_VirtualWidth, virtualX, DTA_VirtualHeight, virtualY);
-				if (selection == (i * cols) + j){
-					Screen.DrawTexture(texID, true, x, y, DTA_VirtualWidth, virtualXI, DTA_VirtualHeight, virtualYI, DTA_ALPHA, 0.8);
-				}
-				else {
-					Screen.DrawTexture(texID, true, x, y, DTA_VirtualWidth, virtualXI, DTA_VirtualHeight, virtualYI, DTA_ALPHA, 0.4);
-				}
-				if (((i * cols) + j) < items.size()){
-					item = items[((i * cols) + j)];
-					sub = item.GetClassName();
-					sub = sub.Mid(0, 7);
-					amt = String.Format("%i", item.amount);
-					Screen.DrawText(SmallFont,Font.CR_BLUE, x+24, y+20, amt, DTA_VirtualWidth, virtualXI, DTA_VirtualHeight, virtualYI);
-					Screen.DrawText(SmallFont,Font.CR_BLUE, x+2, y+30, sub, DTA_VirtualWidth, virtualXI, DTA_VirtualHeight, virtualYI);
-					if (selection == (i * cols) + j){
-						selectedItem = item.GetClassName();	
-						itemFound = true;
-					}
-					console.printf("selected: %s", selectedItem);
-				}	
-				x += size;
+		if (selection < items.size()){selectedItem = items[selection].GetClassName();}
+		else {selectedItem = "none";}
+		
+		for (int i = 0; i < grid.originX.size(); i++){
+			if (selection == i){
+				Screen.DrawTexture(texID, true, grid.originX[i], grid.originY[i], DTA_VirtualWidth, virtualX, DTA_VirtualHeight, virtualY, DTA_ALPHA, 0.8);
 			}
-			x = borderX;
-			y += size;
+			else {
+				Screen.DrawTexture(texID, true, grid.originX[i], grid.originY[i], DTA_VirtualWidth, virtualX, DTA_VirtualHeight, virtualY, DTA_ALPHA, 0.4);
+			}
+			if (i < items.size()){
+				item = items[i];
+				sub = item.GetClassName(); sub = sub.Mid(0, 7);
+				amt = String.Format("%i", item.amount);
+				Screen.DrawText(SmallFont,Font.CR_BLUE, grid.originX[i]+24, grid.originY[i]+20, amt, DTA_VirtualWidth, virtualX, DTA_VirtualHeight, virtualY);
+				Screen.DrawText(SmallFont,Font.CR_BLUE, grid.originX[i]+2, grid.originY[i]+30, sub, DTA_VirtualWidth, virtualX, DTA_VirtualHeight, virtualY);
+			}
 		}
-		if (!itemFound){selectedItem = "none";}
+		console.printf("selected: %s", selectedItem);
 	}
 	
 	override bool MenuEvent(int mkey, bool fromController) {
 		if (mkey == MKEY_Left){
-			if (selection % cols == 0){
-				selection += cols - 1;
+			if (selection % grid.cols == 0){
+				selection += grid.cols - 1;
 			}
 			else{
 				selection --;
 			}
 		}
 		if (mkey == MKEY_Right){
-			if (selection % cols == (cols-1)){
-				selection -= (cols - 1);
+			if (selection % grid.cols == (grid.cols-1)){
+				selection -= (grid.cols - 1);
 			}
 			else{
 				selection ++;
 			}
 		}
 		if (mkey == MKEY_Up){
-			selection -= cols;
+			selection -= grid.cols;
 			if (selection < 0){
-				selection += (cols * rows);
+				selection += (grid.cols * grid.rows);
 			}
 		}
 		if (mkey == MKEY_Down){
-			selection += cols;
-			selection = selection % (cols * rows);
+			selection += grid.cols;
+			selection = selection % (grid.cols * grid.rows);
 		}
 		if (mkey == MKEY_Enter){
 			EventHandler.SendNetworkEvent(selectedItem);
@@ -110,38 +82,16 @@ class InventoryMenu : GenericMenu {
 	
 	override bool MouseEvent(int type, int x, int y){
 		if (type == MOUSE_Click){
-			int newSelction = CoordsToSelection(x, y);
+			int newSelction = grid.CoordsToSelection(x, y);
 			if (newSelction != -1){
 				return MenuEvent(MKEY_Enter, true);
 			}
 		}
 		if (type == MOUSE_Move){
-			int newSelection = CoordsToSelection(x, y);
+			int newSelection = grid.CoordsToSelection(x, y);
 			if (newSelection != -1){selection = newSelection;}
 		}
 		return Super.MouseEvent(type, x, y);
-	}
-	
-	
-	//translate mouse XY coordinates to a new button selection index
-	// returns -1 if no button selected
-	int CoordsToSelection(int x, int y){
-		int newSelection = -1;
-		vector2 coords = (x, y);
-		int x1 = borderX; int y1 = borderY;
-		int x2 = borderX + buttonSize; int y2 = borderY + buttonSize;
-		vector2 lower = (x1, y1); vector2 upper = (x2, y2);
-		for (int i = 0; i < rows; i++){
-			for (int j = 0; j < cols; j++){
-				vector2 lower = Screen.VirtualToRealCoords((x1, y1), (Screen.GetHeight(), Screen.GetWidth()), (virtualX, virtualY));
-				vector2 upper = Screen.VirtualToRealCoords((x2, y2), (Screen.GetHeight(), Screen.GetWidth()), (virtualX, virtualY));
-				if (coords.x >= lower.x && coords.x <= upper.x && coords.y >= lower.y && coords.y <= upper.y){ newSelection = (j + (i * cols)); }
-				x1 += size; x2 += size; 
-			}
-			x1 = borderX ; x2 = borderX + buttonSize;
-			y1 += size; y2 += size;
-		}
-		return newSelection;
 	}
 	
 	//generate a list of the player's inventory items to be drawn in the inventory
@@ -152,5 +102,59 @@ class InventoryMenu : GenericMenu {
 		}
 	}
 	
+}
+
+
+class ButtonGrid : Object{
+	int rows; int cols;
+	int size; // collision size of buttons, should match the sprite size of the button
+	int offset; // how far apart buttons are spaced
+	vector2 center; //where on screen(virtual coords) grid is centered
+	Array<int> originX; //list of all buttons x origin, draw stuff or detect collision based on it
+	Array<int> originY; //list of all buttons y origin
+	int virtualX; int virtualY;	//virtual coordinate space buttons exist in
+	
+
+	ButtonGrid Init(int rows, int cols, int size, int offset, vector2 center, int virtualX, int virtualY){
+		self.rows = rows;
+		self.cols = cols;
+		self.size = size;
+		self.offset = offset;
+		self.center = center;
+		self.virtualX = virtualX;
+		self.virtualY = virtualY;
+		GenerateOrigins();
+		return self;
+	}
+	
+	void GenerateOrigins(){
+		int totalPx = (cols * size) + ((cols - 1) * offset);
+		int totalPy = (rows * size) + ((rows - 1) * offset);
+		int x = center.x - (totalPx / 2);
+		int y = center.y - (totalPy / 2);
+		for (int i = 0; i < rows; i++){
+			for (int j = 0; j < cols; j++){
+				originX.push(x);
+				originY.push(y);
+				x += (size + offset);
+			}
+			x = center.x - (totalPx / 2);
+			y += (size + offset);
+		}
+	}
+	
+	//translate mouse real XY coordinates to a new button selection index
+	// returns -1 if no button selected
+	int CoordsToSelection(int x, int y){
+		int selection = -1;
+		for (int i =0; i < originX.size(); i++){
+			vector2 lower = Screen.VirtualToRealCoords((originX[i], originY[i]), (Screen.GetHeight(), Screen.GetWidth()), (virtualX, virtualY));
+			vector2 upper = Screen.VirtualToRealCoords((originX[i]+size, originY[i]+size), (Screen.GetHeight(), Screen.GetWidth()), (virtualX, virtualY));
+			if (x >= lower.x && x <= upper.x &&y >= lower.y && y <= upper.y){
+				selection = i;
+			}
+		}
+		return selection;
+	}
 	
 }
